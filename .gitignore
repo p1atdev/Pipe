@@ -1,0 +1,10 @@
+# 邪魔なやつ
+node_modules
+
+# セキュリティ
+.env
+*firebase*.json
+
+# データを移す用の
+image.png
+video.mp4
