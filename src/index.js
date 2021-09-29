@@ -10,6 +10,7 @@ import LINEBOT from "./line.js"
 // route用
 import express from "express"
 import path from "path"
+import { RevoltBOT } from "./revolt.js"
 const PORT = process.env.PORT || 80
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -24,4 +25,7 @@ express()
     .listen(PORT, () => console.log(`Listening on ${PORT}`))
 
 // discordの起動
-DiscordBOT.start()
+DiscordBOT.start(process.env.DISCORD_TOKEN)
+
+// revoltの起動
+RevoltBOT.start(process.env.REVOLT_TOKEN)

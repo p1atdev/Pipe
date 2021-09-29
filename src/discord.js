@@ -227,9 +227,10 @@ client.on("interactionCreate", async (interaction) => {
 export default class DiscordBOT {
     /**
      * DiscordのBOTを起動する
+     * @param { string } token ディスコードのトークン
      */
-    static start = () => {
-        client.login(process.env.DISCORD_TOKEN)
+    static start = (token) => {
+        client.login(token)
     }
 
     /**
