@@ -2,9 +2,9 @@ import "dotenv/config"
 import line from "@line/bot-sdk"
 
 // botを読み込む
-import DiscordBOT from "./discord"
-import LINEBOT from "./line"
-import { text } from "express"
+import DiscordBOT from "./discord.js"
+import LINEBOT from "./line.js"
+import { Address, DB } from "./db.js"
 
 /**
  * さまざまなBOTに使いやすくするためのテキストメッセージオブジェクト
@@ -12,12 +12,17 @@ import { text } from "express"
  * @param { Author } author 発言者の情報
  */
 export class TextMessage {
+    /**
+     *
+     * @param { string } text
+     * @param { Author } author
+     */
     constructor(text, author) {
         this.text = text
         this.author = author
     }
 
-    static generateLINEMessage = () => {
+    generateLINEMessage = () => {
         return {
             type: "text",
             text: this.text,
@@ -54,6 +59,11 @@ export class MediaMessage {
 }
 
 /**
+ * メッセージクラス
+ */
+export const Message = TextMessage || MediaMessage
+
+/**
  * 発言者の情報
  * @param { string } userName ユーザーネーム
  * @param { string } iconURL アイコン画像のURL
@@ -62,5 +72,62 @@ export class Author {
     constructor(userName, iconURL) {
         this.userName = userName
         this.iconURL = iconURL
+    }
+}
+
+/**
+ * パイプするためのクラス
+ * @param { Message } message 送信するメッセージ
+ * @param { Address } address 送信元のアドレス
+ */
+export class Pipe {
+    /**
+     * メッセージとアドレスを指定する
+     * @param { Message } message 送信するメッセージ
+     * @param { Address } address 送信元のアドレス
+     */
+    constructor(message, address) {
+        this.message = message
+        this.address = address
+    }
+
+    sendTextMessage = async () => {
+        // まずは転送先を探す
+        const addresses = await DB.getForwardingAddressFrom(this.address)
+
+        // アドレスを得られなければ帰る
+        if (!addresses) {
+            return
+        }
+
+        // アドレスごとに回して、転送する
+        addresses.forEach(async (address) => {
+            // アドレスがあれば
+            if (address) {
+                // もし送信元と一致したら飛ばす
+                if (address.id != this.address.id) {
+                    try {
+                        switch (address.type) {
+                            case "discord": {
+                                await DiscordBOT.sendTextMessage(address, this.message)
+                                break
+                            }
+
+                            case "line": {
+                                await LINEBOT.sendTextMessage(address, this.message)
+                                break
+                            }
+
+                            default: {
+                                // その他
+                                break
+                            }
+                        }
+                    } catch (err) {
+                        console.log(err)
+                    }
+                }
+            }
+        })
     }
 }

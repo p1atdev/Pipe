@@ -1,6 +1,8 @@
 import admin from "firebase-admin"
 // import "process"
 import dotenv from "dotenv"
+import DiscordBOT from "./discord.js"
+import { Webhook } from "discord.js"
 dotenv.config()
 
 admin.initializeApp({
@@ -53,25 +55,29 @@ export class Address {
 
     /**
      * ルームからそれぞれに含まれているアドレスを取得する
-     * @param { Firebaseのdocs } rooms
+     * @param { FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData> } rooms
      * @returns { Address[] }
      */
     static convertRoomsToAdresses(rooms) {
-        return supportedSNS
-            .map((sns) => {
-                return rooms.docs
-                    .map((room) => {
-                        return room
-                            .get(sns)
-                            .map((port) => {
-                                return new Address({
-                                    type: sns,
-                                    id: port.id,
-                                    webhook: port.webhook || "",
-                                    parentId: port.parentId || "",
+        return rooms.docs
+            .map((room) => {
+                return supportedSNS
+                    .map((sns) => {
+                        try {
+                            return room
+                                .get(sns)
+                                .map((port) => {
+                                    return new Address({
+                                        type: sns,
+                                        id: port.id,
+                                        webhook: port.webhook || "",
+                                        parentId: port.parentId || "",
+                                    })
                                 })
-                            })
-                            .flat()
+                                .flat()
+                        } catch {
+                            //スキップ
+                        }
                     })
                     .flat()
             })
@@ -81,12 +87,37 @@ export class Address {
     /**
      * 送られたメッセージからそのアドレスを取得する
      */
-    static getDiscordAddressOf(message) {
+    static getDiscordAddressOf = async (message) => {
+        // webhookを取得して入れてる
         return new Address({
             type: "discord",
             id: message.channel.id,
+            webhook: await DiscordBOT.getWbhookURLOfChannel(message.channel),
             parentId: message.guild.id,
         })
+    }
+
+    /**
+     * 送られたラインのメッセージからアドレスを取得する
+     */
+    static getLineAddressOf(event) {
+        const addressId = event.source.roomId || event.source.groupId || event.source.userId
+        return new Address({
+            type: "line",
+            id: addressId,
+            webhook: "",
+            parentId: "",
+        })
+    }
+}
+
+/**
+ * ルーム(会話を共有するチャット)のクラス
+ */
+export class Room {
+    constructor(room) {
+        this.id = room.id
+        this.addresses = room.addresses
     }
 }
 
@@ -135,7 +166,7 @@ export class DB {
     }
 
     /**
-     * ルームを取得すうr
+     * ルームを取得する
      * @param { string } id roomのid
      * @returns
      */
@@ -147,6 +178,25 @@ export class DB {
         return room.data()
     }
 
+    static getRoomId = async (address) => {
+        const roomRef = db.collection("rooms")
+
+        // その発言があった場所が含まれるルームを取得
+        const rooms = await roomRef.where(`index`, "array-contains", address.id).get()
+
+        // そんなルームがなければ
+        if (rooms.empty) {
+            console.log(`発言されたアドレス ${address.id}(${address.type}) が含まれるルームはありません`)
+            return null
+        }
+
+        const room = rooms.docs[0]
+        const id = room.id
+
+        // ルームがあるのでidを返す
+        return id
+    }
+
     /**
      * SNSの名前と、そのチャットidやサーバーid、グループidから転送先を探す
      * @param { Address } address これが含まれるルームを探す
@@ -156,12 +206,7 @@ export class DB {
         const roomRef = db.collection("rooms")
 
         // その発言があった場所が含まれるルームを取得
-        const rooms = await roomRef
-            .where(`index`, "array-contains", {
-                type: address.type,
-                id: address.id,
-            })
-            .get()
+        const rooms = await roomRef.where(`index`, "array-contains", address.id).get()
 
         // そんなルームがなければ
         if (rooms.empty) {
@@ -171,5 +216,32 @@ export class DB {
 
         // ルームがあるので形を変換して返す
         return Address.convertRoomsToAdresses(rooms)
+    }
+    /**
+     * ルームにアドレスとインデックスを追加する
+     * @param { string } roomId ルームのid
+     * @param { Address } address 追加するアドレス
+     * @returns { bool } 成功したらtrue
+     */
+    static addAddressTo = async (roomId, address) => {
+        const roomRef = db.collection("rooms").doc(roomId)
+
+        try {
+            await roomRef.set(
+                {
+                    [address.type]: admin.firestore.FieldValue.arrayUnion({
+                        id: address.id,
+                        webhook: address.webhook,
+                        parentId: address.parentId,
+                    }),
+                    index: admin.firestore.FieldValue.arrayUnion(address.id),
+                },
+                { merge: true }
+            )
+            return true
+        } catch (err) {
+            console.log(`ルーム入室エラー: ${err}`)
+            return false
+        }
     }
 }
