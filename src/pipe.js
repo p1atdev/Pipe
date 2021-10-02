@@ -5,6 +5,7 @@ import line from "@line/bot-sdk"
 import DiscordBOT from "./discord.js"
 import LINEBOT from "./line.js"
 import { Address, DB } from "./db.js"
+import { RevoltBOT } from "./revolt.js"
 
 /**
  * さまざまなBOTに使いやすくするためのテキストメッセージオブジェクト
@@ -38,10 +39,17 @@ export class TextMessage {
  * さまざまなBOTに使いやすくするためのメディア(画像や動画)メッセージオブジェクト
  * @param { string } url パイプするメディアのあるurl
  * @param { string } previewURL 軽量化されたメディアのurl(サムネ用など)
- * @param { string } type そのメディアの具体的な種別(image, video...)
+ * @param { MediaTypes } type そのメディアの具体的な種別(image, video...)
  * @param { Author } author 発言者の情報
  */
 export class MediaMessage {
+    /**
+     *
+     * @param { string } url
+     * @param { string } previewURL
+     * @param { string } type
+     * @param { string } author
+     */
     constructor(url, previewURL, type, author) {
         this.url = url
         this.previewURL = previewURL
@@ -49,17 +57,31 @@ export class MediaMessage {
         this.author = author
     }
 
-    static generateLINEMessage = () => {
-        return {
-            type: this.type,
-            originalContentUrl: this.media,
-            previewImageUrl: this.previewImageUrl,
+    generateLINEMessage = () => {
+        switch (this.type.toLowerCase()) {
+            case "image": {
+                return {
+                    type: this.type,
+                    originalContentUrl: this.media,
+                    previewImageUrl: this.previewImageUrl,
+                }
+            }
+            case "video": {
+                return {
+                    // type: this.type,
+                }
+            }
         }
+    }
+
+    generateDiscordMessage = () => {
+        return DiscordBOT.generateImageEmbed(this)
     }
 }
 
 /**
  * メッセージクラス
+ * @param { Author } author 送信元の著者
  */
 export const Message = TextMessage || MediaMessage
 
@@ -91,6 +113,10 @@ export class Pipe {
         this.address = address
     }
 
+    /**
+     * テキストメッセージを送る
+     * @returns
+     */
     sendTextMessage = async () => {
         // まずは転送先を探す
         const addresses = await DB.getForwardingAddressFrom(this.address)
@@ -114,7 +140,61 @@ export class Pipe {
                             }
 
                             case "line": {
-                                await LINEBOT.sendTextMessage(address, this.message)
+                                // await LINEBOT.sendTextMessage(address, this.message)
+                                break
+                            }
+
+                            case "revolt": {
+                                await RevoltBOT.sendTextMessage(address, this.message)
+                                break
+                            }
+
+                            default: {
+                                // その他
+                                break
+                            }
+                        }
+                    } catch (err) {
+                        console.log(err)
+                    }
+                }
+            }
+        })
+    }
+
+    /**
+     * メディアメッセージを送る
+     */
+    sendMediaMessage = async () => {
+        // まずは転送先を探す
+        const addresses = await DB.getForwardingAddressFrom(this.address)
+
+        // アドレスを得られなければ帰る
+        if (!addresses) {
+            return
+        }
+
+        // アドレスごとに回して、転送する
+        addresses.forEach(async (address) => {
+            // アドレスがあれば
+            if (address) {
+                // もし送信元と一致したら飛ばす
+                if (address.id != this.address.id) {
+                    try {
+                        switch (address.type) {
+                            case "discord": {
+                                await DiscordBOT.sendMediaMessage(address, this.message)
+                                break
+                            }
+
+                            case "line": {
+                                await LINEBOT.sendMediaMessage(address, this.message)
+
+                                break
+                            }
+
+                            case "revolt": {
+                                // await RevoltBOT.sendTextMessage(address, this.message)
                                 break
                             }
 

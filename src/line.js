@@ -2,25 +2,13 @@ import fs from "fs"
 import "dotenv/config"
 import line from "@line/bot-sdk"
 import { Address, DB } from "./db.js"
-import { Author, Message, Pipe, TextMessage } from "./pipe.js"
+import { Author, MediaMessage, Message, Pipe, TextMessage } from "./pipe.js"
 const config = {
     channelAccessToken: process.env.ACCESS_TOKEN,
     channelSecret: process.env.SECRET_KEY,
 }
 
 const client = new line.Client(config)
-
-async function downloadContent(messageId, downloadPath) {
-    return client.getMessageContent(messageId).then(
-        (stream) =>
-            new Promise((resolve, reject) => {
-                const writable = fs.createWriteStream(downloadPath)
-                stream.pipe(writable)
-                stream.on("end", () => resolve(downloadPath))
-                stream.on("error", reject)
-            })
-    )
-}
 
 /**
  * LINEのイベントを捌く
@@ -48,6 +36,7 @@ const eventHandler = async (event) => {
     const prof = (await client.getProfile(uid)) || (await client.getGroupMemberProfile(gid, uid))
     const userName = prof.displayName
     const iconURL = prof.pictureUrl
+    const author = new Author(userName, iconURL)
 
     function replyText(text, sender = {}) {
         client.replyMessage(event.replyToken, {
@@ -118,10 +107,7 @@ const eventHandler = async (event) => {
                 }
             } else {
                 // コマンドではないのでメッセージをシェアする
-                const pipe = new Pipe(
-                    new TextMessage(message.text, new Author(prof.displayName, prof.pictureUrl)),
-                    messageAddress
-                )
+                const pipe = new Pipe(new TextMessage(message.text, author), messageAddress)
                 await pipe.sendTextMessage()
             }
 
@@ -134,7 +120,10 @@ const eventHandler = async (event) => {
                 event.message.stickerId +
                 "/android/sticker.png"
 
-            await DSendFiles([stickerUrl])
+            const imageMessage = new MediaMessage(stickerUrl, stickerUrl, author)
+
+            const pipe = new Pipe(imageMessage)
+            // await pipe.
 
             break
         }
@@ -195,5 +184,34 @@ export default class LINEBOT {
         } catch (err) {
             console.log(`LINEプッシュ送信エラー: ${err}`)
         }
+    }
+
+    /**
+     * 画像メッセージを送る
+     * @param { Address } address
+     * @param { MediaMessage } message
+     */
+    static sendMediaMessage = async (address, message) => {
+        try {
+            await client.pushMessage(address.id, message.generateLINEMessage())
+        } catch (err) {
+            console.log(`LINEメディア送信エラー: ${err}`)
+        }
+    }
+
+    /**何かをダウンロードする
+     * @param { string } messageId
+     * @param { string } downloadPath
+     */
+    static downloadMessageContent = async (messageId, downloadPath) => {
+        return client.getMessageContent(messageId).then(
+            (stream) =>
+                new Promise((resolve, reject) => {
+                    const writable = fs.createWriteStream(downloadPath)
+                    stream.pipe(writable)
+                    stream.on("end", () => resolve(downloadPath))
+                    stream.on("error", reject)
+                })
+        )
     }
 }

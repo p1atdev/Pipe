@@ -1,13 +1,14 @@
 import fs from "fs"
 import "dotenv/config"
-import Discord, { Collection, Intents } from "discord.js"
+import Discord, { Collection, Intents, MessageEmbed } from "discord.js"
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { REST } from "@discordjs/rest"
 import { Routes } from "discord-api-types/v9"
 // const { clientId, guildId, } = require("./config.json")
 import { Webhook, MessageBuilder } from "discord-webhook-node"
 import { Address, DB, Room } from "./db.js"
-import { Author, Pipe, TextMessage } from "./pipe.js"
+import { Author, MediaMessage, Pipe, TextMessage } from "./pipe.js"
+import e from "express"
 
 const client = new Discord.Client({
     intents: [
@@ -36,7 +37,7 @@ const rest = new REST({ version: "9" }).setToken(token)
 
 // 以下はディスコード
 client.once("ready", () => {
-    console.log(`ディスコードBOT [${client.user.username}] でログインしました`)
+    console.log(`Discord: ${client.user.username} としてログインしました`)
     client.user.setPresence({
         status: "online", //You can show online, idle....
         activity: {
@@ -259,6 +260,52 @@ export default class DiscordBOT {
     }
 
     /**
+     * メディアのメッセージを送る
+     * @param { Address } address
+     * @param { MediaMessage } mediaMessage
+     * @returns
+     */
+    static sendMediaMessage = async (address, mediaMessage) => {
+        if (address.webhook == "") {
+            //webhookが空であれば帰る
+            return
+        }
+        const webhookClient = new Webhook(address.webhook)
+        webhookClient.setAvatar(mediaMessage.author.iconURL)
+        webhookClient.setUsername(mediaMessage.author.userName)
+
+        switch (mediaMessage.type) {
+            case "image": {
+                await webhookClient.send(mediaMessage.generateDiscordMessage())
+                break
+            }
+            case "video": {
+                await webhookClient.sendFile(mediaMessage.url)
+                break
+            }
+            default: {
+                console.log("DiscordBOT.sendMediaMessage default")
+                break
+            }
+        }
+    }
+
+    /**
+     * メッセージを複数まとめて送信する
+     * @param { Address } address 送信元のアドレス
+     * @param { Author } author 発言者
+     * @param { MessageBuilders[] } messages 送信するメッセージ全て
+     */
+    static sendMessages = async (address, author, messages) => {
+        const webhookClient = new Webhook(address.webhook)
+        webhookClient.setAvatar(author.iconURL)
+        webhookClient.setUsername(author.userName)
+        messages.forEach(async (message) => {
+            await webhookClient.send(message)
+        })
+    }
+
+    /**
      * スラッシュコマンドを登録する
      */
     static registerSlashCommand = async (guildId) => {
@@ -289,5 +336,37 @@ export default class DiscordBOT {
             // 再び実行
             await this.getWbhookURLOfChannel(channel)
         }
+    }
+
+    /**
+     * 画像用のEmbedを生成する
+     * @param { MediaMessage } mediaMessage 画像のメッセージ
+     * @returns { (MessageBuilder) }
+     */
+    static generateImageEmbed = (mediaMessage) => {
+        const color = "#2F3137"
+
+        const embed = new MessageBuilder()
+            .setColor(color)
+            .setAuthor(mediaMessage.author.userName, mediaMessage.author.iconURL)
+            .setImage(mediaMessage.url)
+
+        return embed
+    }
+
+    /**
+     * テキスト用のEmbedを生成する
+     * @param { TextMessage } textMessage
+     * @returns { (MessageBuilder) }
+     */
+    static generateTextEmbed = (textMessage) => {
+        const color = "#2F3137"
+
+        const embed = new MessageBuilder()
+            .setColor(color)
+            .setAuthor(textMessage.author.userName, textMessage.author.iconURL)
+            .setDescription(textMessage.text)
+
+        return embed
     }
 }

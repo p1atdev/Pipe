@@ -15,6 +15,7 @@ admin.initializeApp({
 })
 
 const db = admin.firestore()
+const bucket = admin.storage().bucket("pipebot-f3a48.appspot.com")
 
 /**
  * ユーザークラス
@@ -107,6 +108,15 @@ export class Address {
             id: addressId,
             webhook: "",
             parentId: "",
+        })
+    }
+
+    static getRevoltAddressOf(message) {
+        return new Address({
+            type: "revolt",
+            id: message.channel_id,
+            webhook: "",
+            parentId: message.channel.server_id,
         })
     }
 }
@@ -243,5 +253,33 @@ export class DB {
             console.log(`ルーム入室エラー: ${err}`)
             return false
         }
+    }
+}
+
+export class Storage {
+    /**
+     *
+     * @param { string } file 送信するファイル
+     * @param { string } path 追加されるパス
+     */
+    static uploadFile = async (file, path) => {
+        const options = {
+            contentType: "",
+            // 保存されるオブジェクト名
+            destination: path,
+            // ファイルを自動的にgzip圧縮するか
+            gzip: true,
+        }
+
+        await bucket.upload("../hub", options)
+    }
+
+    static showAllFiles = async () => {
+        const options = {}
+        const [files] = await bucket.getFiles(options)
+
+        files.forEach((file) => {
+            console.log(file.name)
+        })
     }
 }
