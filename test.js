@@ -1,6 +1,6 @@
-import { DB, Storage, User } from "./src/db.js"
+import { DB, Functions, Storage, User } from "./src/db.js"
 import DiscordBOT from "./src/discord.js"
-import TwitterBOT from "./src/twitter.js"
+// import TwitterBOT from "./src/twitter.js"
 
 async function test() {
     // console.log(await DB.getUserOf("revolt", "revoltのid"))
@@ -12,7 +12,12 @@ async function test() {
     //     })
     // )
     // TwitterBOT.getDirectMessages()
-    await Storage.showAllFiles()
+    // await Storage.showAllFiles()
+    // へラグの画像のURLを取得するテスト
+    const response = await Functions.getLINEContentURL("14845953553240", "image0.png")
+    console.log(response.url)
+
+    // 多分firebaseのinitで失敗してる...?　←多分違う　ロールとか権限の問題
 }
 
 test()

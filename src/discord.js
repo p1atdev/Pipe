@@ -276,6 +276,7 @@ export default class DiscordBOT {
 
         switch (mediaMessage.type) {
             case "image": {
+                console.log("discordの画像を送るためのやつを生成する")
                 await webhookClient.send(mediaMessage.generateDiscordMessage())
                 break
             }
@@ -341,15 +342,16 @@ export default class DiscordBOT {
     /**
      * 画像用のEmbedを生成する
      * @param { MediaMessage } mediaMessage 画像のメッセージ
+     * @param { Bool } isReply リプライかどうか
      * @returns { (MessageBuilder) }
      */
-    static generateImageEmbed = (mediaMessage) => {
+    static generateImageEmbed = (mediaMessage, isReply = false) => {
         const color = "#2F3137"
+        const embed = new MessageBuilder().setColor(color).setImage(mediaMessage.url)
 
-        const embed = new MessageBuilder()
-            .setColor(color)
-            .setAuthor(mediaMessage.author.userName, mediaMessage.author.iconURL)
-            .setImage(mediaMessage.url)
+        if (isReply) {
+            embed.setAuthor(mediaMessage.author.userName, mediaMessage.author.iconURL)
+        }
 
         return embed
     }
@@ -357,15 +359,17 @@ export default class DiscordBOT {
     /**
      * テキスト用のEmbedを生成する
      * @param { TextMessage } textMessage
+     * @param { Bool } isReply リプライかどうか
      * @returns { (MessageBuilder) }
      */
-    static generateTextEmbed = (textMessage) => {
+    static generateTextEmbed = (textMessage, isReply = false) => {
         const color = "#2F3137"
 
-        const embed = new MessageBuilder()
-            .setColor(color)
-            .setAuthor(textMessage.author.userName, textMessage.author.iconURL)
-            .setDescription(textMessage.text)
+        const embed = new MessageBuilder().setColor(color).setDescription(textMessage.text)
+
+        if (isReply) {
+            embed.setAuthor(textMessage.author.userName, textMessage.author.iconURL)
+        }
 
         return embed
     }

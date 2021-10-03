@@ -1,14 +1,9 @@
 import fs from "fs"
 import "dotenv/config"
 import line from "@line/bot-sdk"
-import { Address, DB } from "./db.js"
+import { Address, DB, Functions } from "./db.js"
 import { Author, MediaMessage, Message, Pipe, TextMessage } from "./pipe.js"
-const config = {
-    channelAccessToken: process.env.ACCESS_TOKEN,
-    channelSecret: process.env.SECRET_KEY,
-}
-
-const client = new line.Client(config)
+import request from "request"
 
 /**
  * LINEのイベントを捌く
@@ -44,20 +39,6 @@ const eventHandler = async (event) => {
             text: text,
             sender: sender,
         })
-    }
-
-    async function DSendFiles(filesURLs) {
-        webhookClient.setAvatar(iconURL)
-        webhookClient.setUsername(userName)
-
-        for (const url of filesURLs) {
-            if (url.startsWith("https://")) {
-                const embed = new MessageBuilder().setImage(url).setColor("#2F3137")
-                await webhookClient.send(embed)
-            } else {
-                await webhookClient.sendFile(url)
-            }
-        }
     }
 
     const message = event.message
@@ -120,30 +101,32 @@ const eventHandler = async (event) => {
                 event.message.stickerId +
                 "/android/sticker.png"
 
-            const imageMessage = new MediaMessage(stickerUrl, stickerUrl, author)
+            const imageMessage = new MediaMessage(stickerUrl, stickerUrl, "image", author)
 
-            const pipe = new Pipe(imageMessage)
-            // await pipe.
+            const pipe = new Pipe(imageMessage, messageAddress)
+            await pipe.sendMediaMessage()
 
             break
         }
 
         case "image": {
-            const downloadPath = "./image.png"
+            console.log("LINEのメッセージから画像を生成するよ")
+            const imageURL = await LINEBOT.generateMediaURL(event.message.id, "image0.png")
 
-            await downloadContent(event.message.id, downloadPath)
+            const imageMessage = new MediaMessage(imageURL, imageURL, "image", author)
 
-            await DSendFiles([downloadPath])
+            const pipe = new Pipe(imageMessage, messageAddress)
+            await pipe.sendMediaMessage()
             break
         }
 
         case "video": {
-            const downloadPath = "./video.mp4"
+            const videoURL = await LINEBOT.generateMediaURL(event.message.id, "video0.mp4")
 
-            await downloadContent(event.message.id, downloadPath)
+            const videoMessage = new MediaMessage(videoURL, videoURL, author)
 
-            await DSendFiles([downloadPath])
-
+            const pipe = new Pipe(videoMessage, messageAddress)
+            await pipe.sendMediaMessage()
             break
         }
     }
@@ -154,7 +137,10 @@ export default class LINEBOT {
     /**
      * LINEのトークンなど
      */
-    static config = config
+    static config = {
+        channelAccessToken: process.env.ACCESS_TOKEN,
+        channelSecret: process.env.SECRET_KEY,
+    }
 
     /**
      * LINEにPOSTがきた時に実行される
@@ -199,19 +185,14 @@ export default class LINEBOT {
         }
     }
 
-    /**何かをダウンロードする
-     * @param { string } messageId
-     * @param { string } downloadPath
+    /**
+     * メディアのURLを生成して取得する
      */
-    static downloadMessageContent = async (messageId, downloadPath) => {
-        return client.getMessageContent(messageId).then(
-            (stream) =>
-                new Promise((resolve, reject) => {
-                    const writable = fs.createWriteStream(downloadPath)
-                    stream.pipe(writable)
-                    stream.on("end", () => resolve(downloadPath))
-                    stream.on("error", reject)
-                })
-        )
+    static generateMediaURL = async (messageId, fileName) => {
+        const response = await Functions.getLINEContentURL(messageId, fileName)
+        console.log(`LINEの画像のURLの生成: ${response.message}, url: ${response.url}`)
+        return response.url
     }
 }
+
+const client = new line.Client(LINEBOT.config)

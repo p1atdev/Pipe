@@ -48,7 +48,7 @@ export class MediaMessage {
      * @param { string } url
      * @param { string } previewURL
      * @param { string } type
-     * @param { string } author
+     * @param { Author } author
      */
     constructor(url, previewURL, type, author) {
         this.url = url
@@ -135,17 +135,20 @@ export class Pipe {
                     try {
                         switch (address.type) {
                             case "discord": {
-                                await DiscordBOT.sendTextMessage(address, this.message)
+                                // await DiscordBOT.sendTextMessage(address, this.message)
+                                DiscordBOT.sendTextMessage(address, this.message)
                                 break
                             }
 
                             case "line": {
                                 // await LINEBOT.sendTextMessage(address, this.message)
+                                LINEBOT.sendTextMessage(address, this.message)
                                 break
                             }
 
                             case "revolt": {
-                                await RevoltBOT.sendTextMessage(address, this.message)
+                                // await RevoltBOT.sendTextMessage(address, this.message)
+                                RevoltBOT.sendTextMessage(address, this.message)
                                 break
                             }
 
@@ -183,12 +186,14 @@ export class Pipe {
                     try {
                         switch (address.type) {
                             case "discord": {
-                                await DiscordBOT.sendMediaMessage(address, this.message)
+                                // await DiscordBOT.sendMediaMessage(address, this.message)
+                                DiscordBOT.sendMediaMessage(address, this.message)
                                 break
                             }
 
                             case "line": {
-                                await LINEBOT.sendMediaMessage(address, this.message)
+                                // await LINEBOT.sendMediaMessage(address, this.message)
+                                LINEBOT.sendMediaMessage(address, this.message)
 
                                 break
                             }

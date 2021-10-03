@@ -1,9 +1,20 @@
 import admin from "firebase-admin"
-// import "process"
+import { initializeApp } from "firebase/app"
+import { getFunctions, httpsCallable } from "firebase/functions"
+import request from "request"
+import os from "os"
+import path from "path"
+import mkdirp from "mkdirp"
+import fetch from "node-fetch"
+import fs from "fs"
+import line from "@line/bot-sdk"
 import dotenv from "dotenv"
 import DiscordBOT from "./discord.js"
 import { Webhook } from "discord.js"
+import LINEBOT from "./line.js"
 dotenv.config()
+
+const lineClient = new line.Client(LINEBOT.config)
 
 admin.initializeApp({
     credential: admin.credential.cert({
@@ -12,10 +23,21 @@ admin.initializeApp({
         privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
     }),
     databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`,
+    storageBucket: process.env.FIREBASE_BACKET_NAME,
+})
+
+const app = initializeApp({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    storageBucket: "pipebot-f3a48.appspot.com",
+    messagingSenderId: "63503428073",
+    appId: "1:63503428073:web:3297abf85776b1fc248378",
+    measurementId: "G-EY592MLTS8",
 })
 
 const db = admin.firestore()
-const bucket = admin.storage().bucket("pipebot-f3a48.appspot.com")
+const bucket = admin.storage().bucket()
 
 /**
  * ユーザークラス
@@ -257,23 +279,6 @@ export class DB {
 }
 
 export class Storage {
-    /**
-     *
-     * @param { string } file 送信するファイル
-     * @param { string } path 追加されるパス
-     */
-    static uploadFile = async (file, path) => {
-        const options = {
-            contentType: "",
-            // 保存されるオブジェクト名
-            destination: path,
-            // ファイルを自動的にgzip圧縮するか
-            gzip: true,
-        }
-
-        await bucket.upload("../hub", options)
-    }
-
     static showAllFiles = async () => {
         const options = {}
         const [files] = await bucket.getFiles(options)
@@ -281,5 +286,50 @@ export class Storage {
         files.forEach((file) => {
             console.log(file.name)
         })
+    }
+}
+
+export class Functions {
+    /**
+     * LINEのメッセージのメディアのコンテンツを取得する
+     * @param { string } messageId
+     * @param { string } fileName 作成するファイルの名前
+     * @returns { Object } messageとurlを持ったオブジェクトを返す
+     */
+    static getLINEContentURL = async (messageId, fileName) => {
+        const functions = getFunctions(app)
+        const uploadLINEMediaContent = httpsCallable(functions, "uploadLINEMessageMediaContent")
+        return await uploadLINEMediaContent({ messageId: messageId, fileName: fileName })
+            .then((result) => {
+                // Read result of the Cloud Function.
+                /** @type {any} */
+                const data = result.data
+                return data
+            })
+            .catch((error) => {
+                console.log(`エラー: ${error}`)
+                return "Error"
+            })
+    }
+
+    /**
+     * helloを取得する
+     */
+    static getHello = async () => {
+        console.log("get Hello")
+
+        const functions = getFunctions(app)
+        const hello = httpsCallable(functions, "hello")
+        return await hello()
+            .then((result) => {
+                // Read result of the Cloud Function.
+                /** @type {any} */
+                const data = result.data
+                return data
+            })
+            .catch((error) => {
+                console.log(`エラー: ${error}`)
+                return "Error"
+            })
     }
 }

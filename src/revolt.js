@@ -10,6 +10,10 @@ client.on("ready", async () => {
 })
 
 client.on("message", async (message) => {
+    if (message.author.bot) {
+        return
+    }
+
     const messageAddress = Address.getRevoltAddressOf(message)
     const author = new Author(message.author.username, message.author.generateAvatarURL())
 

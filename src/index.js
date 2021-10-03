@@ -22,7 +22,7 @@ express()
     .set("views", path.join(__dirname, "views"))
     .set("view engine", "ejs")
     .post("/line/", line.middleware(LINEBOT.config), (req, res) => LINEBOT.posted(req, res))
-    .get("/twitter/")
+    // .get("/twitter/", (req, res) => {})
     .listen(PORT, () => console.log(`Listening on ${PORT}`))
 
 // discordの起動
