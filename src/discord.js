@@ -28,7 +28,7 @@ const commands = [
     new SlashCommandBuilder().setName("webhook").setDescription("Webhook URLを生成、または確認します"),
     new SlashCommandBuilder().setName("check").setDescription("登録されているルームを確認します"),
     new SlashCommandBuilder()
-        .setName("enter")
+        .setName("connect")
         .addStringOption((option) => option.setName("room_id").setDescription("ルームのID").setRequired(true))
         .setDescription("ルームに入室する"),
 ].map((command) => command.toJSON())
@@ -208,6 +208,8 @@ client.on("interactionCreate", async (interaction) => {
             break
         }
         case "enter": {
+            // ユーザーがサーバーの管理者かどうか確認する
+
             // ルームに入る
             const roomId = interaction.options.getString("room_id")
 
@@ -215,8 +217,8 @@ client.on("interactionCreate", async (interaction) => {
             const isSuccess = await DB.addAddressTo(roomId, await Address.getDiscordAddressOf(interaction))
             await interaction.reply(
                 isSuccess
-                    ? `ルーム[${roomId}] に入室しました`
-                    : `ルーム[${roomId}] に入室できませんでした。\nルームIDが正しいかお確かめください。`
+                    ? `ルーム[${roomId}] と接続しました`
+                    : `ルーム[${roomId}] と接続できませんでした。\nルームIDが正しいかお確かめください。`
             )
         }
         default: {
@@ -372,5 +374,18 @@ export default class DiscordBOT {
         }
 
         return embed
+    }
+
+    /**
+     * チャンネル名を取得する
+     * @param { string } channelId
+     */
+    static getChannelName = (channelId) => {
+        const channel = client.channels.cache.get(channelId)
+        return channel.name
+    }
+
+    static getGuildName = (guildId) => {
+        return client.guilds.cache.get(guildId).name
     }
 }
