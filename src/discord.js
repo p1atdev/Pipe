@@ -1,6 +1,6 @@
 import fs from "fs"
 import "dotenv/config"
-import Discord, { Collection, Intents, MessageEmbed } from "discord.js"
+import Discord, { Channel, Collection, Intents, MessageEmbed } from "discord.js"
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { REST } from "@discordjs/rest"
 import { Routes } from "discord-api-types/v9"
@@ -172,6 +172,7 @@ client.on("interactionCreate", async (interaction) => {
     if (!interaction.isCommand()) return
 
     const { commandName } = interaction
+    const messageAddress = await Address.getDiscordAddressOf(interaction)
 
     switch (commandName) {
         case "neko": {
@@ -192,10 +193,10 @@ client.on("interactionCreate", async (interaction) => {
             // もしこのbotが作成したwebhookが存在していれば
             if (myWebhooks.size == 0) {
                 await DiscordBOT.generateWebhookURLOf(interaction.channel)
-                await interaction.reply("Webhookを登録しました")
+                interaction.reply("Webhookを登録しました")
             } else {
                 await interaction.reply(`すでに登録されているWebhookが見つかりました\nID: ${myWebhooks.first().id}`)
-                const webhook = await client.fetchWebhook(myWebhooks.first().id)
+                // const webhook = await client.fetchWebhook(myWebhooks.first().id)
             }
 
             break
@@ -203,8 +204,8 @@ client.on("interactionCreate", async (interaction) => {
         case "check": {
             // ルームを確認する
             // const channelId = interaction.channel.id
-            const room = (await DB.getRoomId(await Address.getDiscordAddressOf(interaction))) || "ルームはありません"
-            await interaction.reply(`ルーム: ${room}`)
+            const room = (await DB.getRoomId(messageAddress)) || "ルームはありません"
+            interaction.reply(`ルーム: ${room}`)
             break
         }
         case "connect": {
@@ -214,8 +215,8 @@ client.on("interactionCreate", async (interaction) => {
             const roomId = interaction.options.getString("room_id")
 
             // ルームにaddressを追加
-            const isSuccess = await DB.addAddressTo(roomId, await Address.getDiscordAddressOf(interaction))
-            await interaction.reply(
+            const isSuccess = await DB.addAddressTo(roomId, messageAddress)
+            interaction.reply(
                 isSuccess
                     ? `ルーム[${roomId}] と接続しました`
                     : `ルーム[${roomId}] と接続できませんでした。\nルームIDが正しいかお確かめください。`
@@ -322,8 +323,12 @@ export default class DiscordBOT {
 
     /**
      * webhook urlを取得する
+     * @param { Discord.TextBasedChannels } channel
      */
-    static getWbhookURLOfChannel = async (channel) => {
+    static getWebhookURLOfChannel = async (channel) => {
+        /**
+         * @type { Collection<string, Discord.Webhook>> }
+         */
         const webhooks = (await channel.fetchWebhooks()) || []
         // このbotが作成したwebhook
         const myWebhooks = webhooks.filter((webhook) => {
@@ -331,13 +336,13 @@ export default class DiscordBOT {
         })
 
         // もしこのbotが作成したwebhookが存在していれば
-        if (myWebhooks.length != 0) {
+        if (myWebhooks.size != 0) {
             const webhook = await client.fetchWebhook(myWebhooks.first().id)
             return webhook.url
         } else {
-            await DiscordBOT.generateWebhookURLOf(interaction.channel)
+            await DiscordBOT.generateWebhookURLOf(channel)
             // 再び実行
-            await this.getWbhookURLOfChannel(channel)
+            return await this.getWebhookURLOfChannel(channel)
         }
     }
 

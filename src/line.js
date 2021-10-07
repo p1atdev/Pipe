@@ -146,6 +146,9 @@ const eventHandler = async (event) => {
 
                                 replyMessages([descriptionText, buttonMessage])
 
+                                // キューを作成する
+                                await DB.createConnectQueue("line", messageAddress, roomId)
+
                                 // 他のところに、接続するよ的な感じのを通知
                                 const pipe = new Pipe(
                                     new TextMessage(
@@ -154,13 +157,13 @@ const eventHandler = async (event) => {
                                     ),
                                     messageAddress
                                 )
-                                await pipe.sendTextMessage()
+                                pipe.sendTextMessage()
                             }
                         }
                     } else {
                         // コマンドではないのでメッセージをシェアする
                         const pipe = new Pipe(new TextMessage(message.text, author), messageAddress)
-                        await pipe.sendTextMessage()
+                        pipe.sendTextMessage()
                     }
 
                     break
@@ -175,7 +178,7 @@ const eventHandler = async (event) => {
                     const imageMessage = new MediaMessage(stickerUrl, stickerUrl, "image", author)
 
                     const pipe = new Pipe(imageMessage, messageAddress)
-                    await pipe.sendMediaMessage()
+                    pipe.sendMediaMessage()
 
                     break
                 }
@@ -187,7 +190,7 @@ const eventHandler = async (event) => {
                     const imageMessage = new MediaMessage(imageURL, imageURL, "image", author)
 
                     const pipe = new Pipe(imageMessage, messageAddress)
-                    await pipe.sendMediaMessage()
+                    pipe.sendMediaMessage()
                     break
                 }
 
@@ -197,7 +200,7 @@ const eventHandler = async (event) => {
                     const videoMessage = new MediaMessage(videoURL, videoURL, "video", author)
 
                     const pipe = new Pipe(videoMessage, messageAddress)
-                    await pipe.sendMediaMessage()
+                    pipe.sendMediaMessage()
                     break
                 }
             }
@@ -221,6 +224,8 @@ const eventHandler = async (event) => {
                         replyText(`現在の承認人数: ${allowingStatus.currentAllows}`)
                     } else {
                         // ルームと接続する
+                        DB.addAddressTo(allowingStatus.roomId, messageAddress)
+
                         replyMessages([
                             { type: "text", text: `現在の承認人数: ${allowingStatus.currentAllows}` },
                             { type: "text", text: `このグループとルームを接続しました` },

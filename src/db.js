@@ -115,7 +115,7 @@ export class Address {
         return new Address({
             type: "discord",
             id: message.channel.id,
-            webhook: await DiscordBOT.getWbhookURLOfChannel(message.channel),
+            webhook: await DiscordBOT.getWebhookURLOfChannel(message.channel),
             parentId: message.guild.id,
         })
     }
@@ -257,19 +257,25 @@ export class DB {
      */
     static addAddressTo = async (roomId, address) => {
         const roomRef = db.collection("rooms").doc(roomId)
+        const allowRef = db.collection("allow").doc(address.type)
 
         try {
-            await roomRef.set(
-                {
-                    [address.type]: admin.firestore.FieldValue.arrayUnion({
-                        id: address.id,
-                        webhook: address.webhook,
-                        parentId: address.parentId,
-                    }),
-                    index: admin.firestore.FieldValue.arrayUnion(address.id),
-                },
-                { merge: true }
-            )
+            await Promise.all([
+                allowRef.set({
+                    [address.id]: {},
+                }),
+                roomRef.set(
+                    {
+                        [address.type]: admin.firestore.FieldValue.arrayUnion({
+                            id: address.id,
+                            webhook: address.webhook,
+                            parentId: address.parentId,
+                        }),
+                        index: admin.firestore.FieldValue.arrayUnion(address.id),
+                    },
+                    { merge: true }
+                ),
+            ])
             return true
         } catch (err) {
             console.log(`ルーム入室エラー: ${err}`)
@@ -343,46 +349,64 @@ export class DB {
     /**
      * BOTを接続する承認をする
      * @param { bool } allow 承認する(true)か否(false)か
-     * @param { string } sns 参加を許可するSNS名
      * @param { Address } address 参加を許可するSNSのルームとかのアドレス
      * @param { string } userId 承認操作をしたユーザー
      * @param { string } requiredNumber 接続に必要な合計の承認数
      * @returns { Object } 最終的な承認数やこの承認によって接続ができるようになったかどうか
      */
-    static allowConnecting = async (allow, sns, address, userId = "", requiredNumber) => {
-        const allowRef = db.collection("allow").doc(sns)
+    static allowConnecting = async (allow, address, userId = "", requiredNumber) => {
+        const allowRef = db.collection("allow").doc(address.type)
 
         if (allow) {
-            allowRef.set(
+            await allowRef.set(
                 {
                     [address.id]: {
-                        allows: arrayUnion(userId),
+                        allows: admin.firestore.FieldValue.arrayUnion(userId),
+                        requiredNumber: requiredNumber,
                     },
-                    requiredNumber: requiredNumber,
                 },
                 { merge: true }
             )
         } else {
-            allowRef.set(
+            await allowRef.set(
                 {
                     [address.id]: {
                         allows: [],
+                        requiredNumber: requiredNumber,
                     },
-                    requiredNumber: requiredNumber,
                 },
                 { merge: true }
             )
         }
 
         // 最終的なallowsの人数とrequiredNumberを取得して比較
-        const targetQueue = (await allowRef.get()).data()
-
+        const targetQueue = (await allowRef.get()).get(address.id)
         const canConnect = targetQueue.allows.length >= targetQueue.requiredNumber
 
         return {
             canConnect: canConnect,
             currentAllows: targetQueue.allows.length,
+            roomId: targetQueue.roomId,
         }
+    }
+
+    /**
+     * 特定のルームへの接続待機状態を作成する
+     * @param { Address } address 登録したいアドレス
+     * @param { string } roomId 接続先のルーム
+     */
+    static createConnectQueue = async (address, roomId) => {
+        const allowRef = db.collection("allow").doc(address.type)
+
+        await allowRef.set(
+            {
+                [address.id]: {
+                    roomId: roomId,
+                    allows: [],
+                },
+            },
+            { merge: true }
+        )
     }
 }
 
