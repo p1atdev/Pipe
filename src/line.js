@@ -147,7 +147,7 @@ const eventHandler = async (event) => {
                                 replyMessages([descriptionText, buttonMessage])
 
                                 // キューを作成する
-                                await DB.createConnectQueue("line", messageAddress, roomId)
+                                await DB.createConnectQueue(messageAddress, roomId)
 
                                 // 他のところに、接続するよ的な感じのを通知
                                 const pipe = new Pipe(
@@ -214,7 +214,6 @@ const eventHandler = async (event) => {
                     // ルームを探し、allowを変更する
                     const allowingStatus = await DB.allowConnecting(
                         true,
-                        "line",
                         messageAddress,
                         uid,
                         await LINEBOT.getNumberOfAllowingToConnect(gid)
@@ -233,6 +232,14 @@ const eventHandler = async (event) => {
                     }
                 }
             }
+            break
+        }
+
+        case "join": {
+            console.log("グループに参加しました")
+            break
+        }
+        default: {
             break
         }
     }
