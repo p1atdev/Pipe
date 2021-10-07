@@ -1,4 +1,4 @@
-import admin from "firebase-admin"
+import admin, { firestore } from "firebase-admin"
 import { initializeApp } from "firebase/app"
 import { getFunctions, httpsCallable } from "firebase/functions"
 import request from "request"
@@ -338,6 +338,51 @@ export class DB {
                 }
             })
         )
+    }
+
+    /**
+     * BOTを接続する承認をする
+     * @param { bool } allow 承認する(true)か否(false)か
+     * @param { string } sns 参加を許可するSNS名
+     * @param { Address } address 参加を許可するSNSのルームとかのアドレス
+     * @param { string } userId 承認操作をしたユーザー
+     * @param { string } requiredNumber 接続に必要な合計の承認数
+     * @returns { Object } 最終的な承認数やこの承認によって接続ができるようになったかどうか
+     */
+    static allowConnecting = async (allow, sns, address, userId = "", requiredNumber) => {
+        const allowRef = db.collection("allow").doc(sns)
+
+        if (allow) {
+            allowRef.set(
+                {
+                    [address.id]: {
+                        allows: arrayUnion(userId),
+                    },
+                    requiredNumber: requiredNumber,
+                },
+                { merge: true }
+            )
+        } else {
+            allowRef.set(
+                {
+                    [address.id]: {
+                        allows: [],
+                    },
+                    requiredNumber: requiredNumber,
+                },
+                { merge: true }
+            )
+        }
+
+        // 最終的なallowsの人数とrequiredNumberを取得して比較
+        const targetQueue = (await allowRef.get()).data()
+
+        const canConnect = targetQueue.allows.length >= targetQueue.requiredNumber
+
+        return {
+            canConnect: canConnect,
+            currentAllows: targetQueue.allows.length,
+        }
     }
 }
 

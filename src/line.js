@@ -206,6 +206,28 @@ const eventHandler = async (event) => {
         case "postback": {
             const postbackData = event.postback.data
             console.log(postbackData)
+            switch (postbackData) {
+                case "allow": {
+                    // ルームを探し、allowを変更する
+                    const allowingStatus = await DB.allowConnecting(
+                        true,
+                        "line",
+                        messageAddress,
+                        uid,
+                        await LINEBOT.getNumberOfAllowingToConnect(gid)
+                    )
+
+                    if (!allowingStatus.canConnect) {
+                        replyText(`現在の承認人数: ${allowingStatus.currentAllows}`)
+                    } else {
+                        // ルームと接続する
+                        replyMessages([
+                            { type: "text", text: `現在の承認人数: ${allowingStatus.currentAllows}` },
+                            { type: "text", text: `このグループとルームを接続しました` },
+                        ])
+                    }
+                }
+            }
             break
         }
     }
