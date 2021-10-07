@@ -199,7 +199,7 @@ export class Pipe {
                             }
 
                             case "revolt": {
-                                // await RevoltBOT.sendTextMessage(address, this.message)
+                                await RevoltBOT.sendMediaMessage(address, this.message)
                                 break
                             }
 

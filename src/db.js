@@ -1,4 +1,4 @@
-import admin from "firebase-admin"
+import admin, { firestore } from "firebase-admin"
 import { initializeApp } from "firebase/app"
 import { getFunctions, httpsCallable } from "firebase/functions"
 import request from "request"
@@ -30,7 +30,7 @@ const app = initializeApp({
     projectId: process.env.FIREBASE_PROJECT_ID,
     apiKey: process.env.FIREBASE_API_KEY,
     authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-    storageBucket: "pipebot-f3a48.appspot.com",
+    storageBucket: process.env.FIREBASE_BACKET_NAME,
     messagingSenderId: "63503428073",
     appId: "1:63503428073:web:3297abf85776b1fc248378",
     measurementId: "G-EY592MLTS8",
@@ -78,7 +78,7 @@ export class Address {
 
     /**
      * ルームからそれぞれに含まれているアドレスを取得する
-     * @param { FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData> } rooms
+     * @param { FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>[] } rooms
      * @returns { Address[] }
      */
     static convertRoomsToAdresses(rooms) {
@@ -207,7 +207,7 @@ export class DB {
 
         const room = await roomRef.get()
 
-        return room.data()
+        return room
     }
 
     static getRoomId = async (address) => {
@@ -274,6 +274,114 @@ export class DB {
         } catch (err) {
             console.log(`ルーム入室エラー: ${err}`)
             return false
+        }
+    }
+
+    /**
+     * ルームからそこに含まれるアドレスを取得する
+     * @param { * } room
+     */
+    static getAddressesOfRoom = (room) => {
+        return supportedSNS
+            .map((sns) => {
+                try {
+                    return room
+                        .get(sns)
+                        .map((port) => {
+                            return new Address({
+                                type: sns,
+                                id: port.id,
+                                webhook: port.webhook || "",
+                                parentId: port.parentId || "",
+                            })
+                        })
+                        .flat()
+                } catch (err) {
+                    //スキップ
+                    console.log(err)
+                }
+            })
+            .flat()
+    }
+
+    /**
+     *
+     * @param { Address[] } addresses 名前とSNS名を取得したいアドレス
+     */
+    static getPortsOf = async (addresses) => {
+        return await Promise.all(
+            addresses.map((address) => {
+                switch (address.type) {
+                    case "line": {
+                        return { sns: "LINE", name: LINEBOT.getGroupName(address.id), parentName: "" }
+                    }
+                    case "discord": {
+                        return {
+                            sns: "Discord",
+                            name: DiscordBOT.getChannelName(address.id),
+                            parentName: DiscordBOT.getGuildName(address.parentId),
+                        }
+                    }
+                    // case "revolt": {
+                    //     return { sns: "revolt" }
+                    // }
+                    // case "slack": {
+                    //     return { sns: "slack" }
+                    // }
+                    default: {
+                        return {
+                            sns: "不明",
+                            name: "不明",
+                            parentName: "不明",
+                        }
+                    }
+                }
+            })
+        )
+    }
+
+    /**
+     * BOTを接続する承認をする
+     * @param { bool } allow 承認する(true)か否(false)か
+     * @param { string } sns 参加を許可するSNS名
+     * @param { Address } address 参加を許可するSNSのルームとかのアドレス
+     * @param { string } userId 承認操作をしたユーザー
+     * @param { string } requiredNumber 接続に必要な合計の承認数
+     * @returns { Object } 最終的な承認数やこの承認によって接続ができるようになったかどうか
+     */
+    static allowConnecting = async (allow, sns, address, userId = "", requiredNumber) => {
+        const allowRef = db.collection("allow").doc(sns)
+
+        if (allow) {
+            allowRef.set(
+                {
+                    [address.id]: {
+                        allows: arrayUnion(userId),
+                    },
+                    requiredNumber: requiredNumber,
+                },
+                { merge: true }
+            )
+        } else {
+            allowRef.set(
+                {
+                    [address.id]: {
+                        allows: [],
+                    },
+                    requiredNumber: requiredNumber,
+                },
+                { merge: true }
+            )
+        }
+
+        // 最終的なallowsの人数とrequiredNumberを取得して比較
+        const targetQueue = (await allowRef.get()).data()
+
+        const canConnect = targetQueue.allows.length >= targetQueue.requiredNumber
+
+        return {
+            canConnect: canConnect,
+            currentAllows: targetQueue.allows.length,
         }
     }
 }

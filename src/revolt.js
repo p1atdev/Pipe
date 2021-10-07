@@ -74,4 +74,14 @@ export class RevoltBOT {
         // client.
         await client.channels.$get(address.id).sendMessage(textMessage.text)
     }
+
+    /**
+     * 指定のアドレスにメディアを送信する
+     * @param { Address } address
+     * @param { MediaMessage } mediaMessage
+     */
+    static sendMediaMessage = async (address, mediaMessage) => {
+        // client.
+        // await client.channels.$get(address.id).sendMessage(mediaMessage)
+    }
 }
