@@ -1,4 +1,4 @@
-import admin, { firestore } from "firebase-admin"
+import admin from "firebase-admin"
 import { initializeApp } from "firebase/app"
 import { getFunctions, httpsCallable } from "firebase/functions"
 import request from "request"
