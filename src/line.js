@@ -22,15 +22,17 @@ const eventHandler = async (event) => {
      * グループid
      * @type { string }
      */
-    const gid = event.source.groupId || null
+    const gid = event.source.groupId ?? null
     /**
      * ルームid
      * @type { string }
      */
-    const rid = event.source.roomId || null
+    const rid = event.source.roomId ?? null
 
-    const addressId = rid || gid || uid
-    const prof = (await client.getProfile(uid)) || (await client.getGroupMemberProfile(gid, uid))
+    const addressId = rid ?? gid ?? uid
+
+    const prof =
+        rid == null ? await client.getGroupMemberProfile(gid, uid) : await client.getRoomMemberProfile(rid, uid)
     const userName = prof.displayName
     const iconURL = prof.pictureUrl
     const author = new Author(userName, iconURL)
@@ -158,12 +160,31 @@ const eventHandler = async (event) => {
                                     messageAddress
                                 )
                                 pipe.sendTextMessage()
+                                return
+                            }
+
+                            case "/leave": {
+                                if (rid != null) {
+                                    replyText(
+                                        "トークルームではこの機能をご利用いただけません。グループを作成してお使いください。"
+                                    )
+                                    return
+                                }
+                                if (gid == null) {
+                                    replyText("そのコマンドはDMでは使用できません")
+                                    return
+                                }
+
+                                // TODO: ルームからの退出(接続解除)機能の実装
+
+                                replyText("まだ実装されてない")
+                                break
                             }
                         }
                     } else {
                         // コマンドではないのでメッセージをシェアする
                         const pipe = new Pipe(new TextMessage(message.text, author), messageAddress)
-                        pipe.sendTextMessage()
+                        await pipe.sendTextMessage()
                     }
 
                     break
@@ -230,8 +251,21 @@ const eventHandler = async (event) => {
                             { type: "text", text: `このグループとルームを接続しました` },
                         ])
                     }
+                    break
+                }
+                case "deny": {
+                    // ルームを探し、allowを変更する
+                    await DB.allowConnecting(false, messageAddress, "", await LINEBOT.getNumberOfAllowingToConnect(gid))
+
+                    replyText(`グループとルームの接続が却下されました\n再度接続をするには初めからやり直してください`)
+                    break
                 }
             }
+            break
+        }
+
+        case "unsend": {
+            console.log("送信取り消しされた")
             break
         }
 

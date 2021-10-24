@@ -1,16 +1,16 @@
 import admin from "firebase-admin"
 import { initializeApp } from "firebase/app"
 import { getFunctions, httpsCallable } from "firebase/functions"
-import request from "request"
-import os from "os"
-import path from "path"
-import mkdirp from "mkdirp"
-import fetch from "node-fetch"
-import fs from "fs"
+// import request from "request"
+// import os from "os"
+// import path from "path"
+// import mkdirp from "mkdirp"
+// import fetch from "node-fetch"
+// import fs from "fs"
 import line from "@line/bot-sdk"
 import dotenv from "dotenv"
 import DiscordBOT from "./discord.js"
-import { Webhook } from "discord.js"
+// import { Webhook } from "discord.js"
 import LINEBOT from "./line.js"
 dotenv.config()
 
@@ -285,7 +285,8 @@ export class DB {
 
     /**
      * ルームからそこに含まれるアドレスを取得する
-     * @param { * } room
+     * @param { * } room firebaseのアレ
+     * @returns { Address[] }
      */
     static getAddressesOfRoom = (room) => {
         return supportedSNS
@@ -311,8 +312,9 @@ export class DB {
     }
 
     /**
-     *
+     * ポート(繋がっている場所)を返す
      * @param { Address[] } addresses 名前とSNS名を取得したいアドレス
+     * @returns { Object[] }
      */
     static getPortsOf = async (addresses) => {
         return await Promise.all(
