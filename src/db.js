@@ -277,10 +277,11 @@ export class DB {
                 ),
             ])
 
-            // TODO: 初回生成の場合、他のSNSのための場所が生成されないため、それを治す
-
-            supportedSNS.forEach((sns) => {
-                if (!(await roomRef.get(sns))) {
+            // 初回生成の場合、他のSNSのための場所が生成されないため、それを治す
+            supportedSNS.forEach(async (sns) => {
+                const roomData = await roomRef.get()
+                console.log(roomData.get(sns))
+                if (!roomData.get(sns)) {
                     await roomRef.set(
                         {
                             [sns]: [],
