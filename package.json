@@ -4,13 +4,14 @@
   "description": "",
   "type": "module",
   "engines": {
-    "node": "12.x"
+    "node": "16.x"
   },
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
     "test": "node test.js",
-    "serve": "ngrok http 3000"
+    "serve": "ngrok http 3000",
+    "push-env": "heroku config:push"
   },
   "dependencies": {
     "@discordjs/builders": "^0.6.0",

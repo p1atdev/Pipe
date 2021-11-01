@@ -16,8 +16,6 @@ async function test() {
     // へラグの画像のURLを取得するテスト
     const response = await Functions.getLINEContentURL("14845953553240", "image0.png")
     console.log(response.url)
-
-    // 多分firebaseのinitで失敗してる...?　←多分違う　ロールとか権限の問題
 }
 
 test()
