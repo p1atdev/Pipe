@@ -304,6 +304,10 @@ export class DB {
      * @returns { Address[] }
      */
     static getAddressesOfRoom = (room) => {
+        if (room == null) {
+            return []
+        }
+
         try {
             return supportedSNS
                 .map((sns) => {
