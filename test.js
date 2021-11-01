@@ -14,8 +14,8 @@ async function test() {
     // TwitterBOT.getDirectMessages()
     // await Storage.showAllFiles()
     // へラグの画像のURLを取得するテスト
-    const response = await Functions.getLINEContentURL("14845953553240", "image0.png")
-    console.log(response.url)
+    // const response = await Functions.getLINEContentURL("14845953553240", "image0.png")
+    // console.log(response.url)
 }
 
 test()

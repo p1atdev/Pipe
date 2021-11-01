@@ -1,7 +1,7 @@
 import { DB, Address, User } from "./db.js"
 import { Client } from "revolt.js"
 import { Author, MediaMessage, Pipe, TextMessage } from "./pipe.js"
-import DiscordBOT from "./discord.js"
+// import DiscordBOT from "./discord.js"
 
 const client = new Client()
 
