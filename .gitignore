@@ -2,7 +2,7 @@
 node_modules
 
 # セキュリティ
-.env
+*.env
 *firebase*.json
 
 # データを移す用の

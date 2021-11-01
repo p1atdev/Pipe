@@ -25,8 +25,16 @@ express()
     // .get("/twitter/", (req, res) => {})
     .listen(PORT, () => console.log(`Listening on ${PORT}`))
 
-// discordの起動
-DiscordBOT.start(process.env.DISCORD_TOKEN)
+try {
+    // discordの起動
+    DiscordBOT.start(process.env.DISCORD_TOKEN)
+} catch (error) {
+    console.log(error)
+}
 
-// revoltの起動
-RevoltBOT.start(process.env.REVOLT_TOKEN)
+try {
+    // revoltの起動
+    RevoltBOT.start(process.env.REVOLT_TOKEN)
+} catch (error) {
+    console.log(error)
+}
