@@ -11,7 +11,9 @@
     "start": "node src/index.js",
     "test": "node test.js",
     "serve": "ngrok http 3000",
-    "push-env": "heroku config:push"
+    "push-env": "heroku config:push",
+    "deploy": "git push -u origin master",
+    "deploy:comb": "git push -u origin master"
   },
   "dependencies": {
     "@discordjs/builders": "^0.6.0",

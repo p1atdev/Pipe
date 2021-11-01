@@ -14,7 +14,7 @@ import DiscordBOT from "./discord.js"
 import LINEBOT from "./line.js"
 dotenv.config()
 
-const lineClient = new line.Client(LINEBOT.config)
+// const lineClient = new line.Client(LINEBOT.config)
 
 admin.initializeApp({
     credential: admin.credential.cert({
@@ -99,7 +99,7 @@ export class Address {
                                 })
                                 .flat()
                         } catch {
-                            //スキップ
+                            // TODO: 存在しないのはおかしいので直す
                         }
                     })
                     .flat()
@@ -276,11 +276,11 @@ export class DB {
                     { merge: true }
                 ),
             ])
-            return true
         } catch (err) {
             console.log(`ルーム入室エラー: ${err}`)
-            return false
         }
+
+        // TODO: 初回生成の場合、他のSNSのための場所が生成されないため、それを治す
     }
 
     /**
@@ -295,6 +295,7 @@ export class DB {
                     return room
                         .get(sns)
                         .map((port) => {
+                            console.log(room)
                             return new Address({
                                 type: sns,
                                 id: port.id,
@@ -306,6 +307,7 @@ export class DB {
                 } catch (err) {
                     //スキップ
                     console.log(err)
+                    // TODO: 存在しないのはおかしいので直す
                 }
             })
             .flat()
