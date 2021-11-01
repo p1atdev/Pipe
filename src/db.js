@@ -205,7 +205,7 @@ export class DB {
     static getRoomOf = async (id) => {
         const roomRef = db.collection("rooms").doc(id)
 
-        const room = await roomRef.get()
+        const room = (await roomRef.get()) || null
 
         return room
     }
@@ -300,7 +300,7 @@ export class DB {
 
     /**
      * ルームからそこに含まれるアドレスを取得する
-     * @param { * } room firebaseのアレ
+     * @param { FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData> } room firebaseのアレ
      * @returns { Address[] }
      */
     static getAddressesOfRoom = (room) => {
