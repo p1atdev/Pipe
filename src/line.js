@@ -31,8 +31,7 @@ const eventHandler = async (event) => {
 
     const addressId = rid || gid || uid
 
-    const prof =
-        rid == null ? await client.getGroupMemberProfile(gid, uid) : await client.getRoomMemberProfile(rid, uid)
+    const prof = gid ? await client.getGroupMemberProfile(gid, uid) : await client.getProfile(uid)
     const userName = prof.displayName
     const iconURL = prof.pictureUrl
     const author = new Author(userName, iconURL)
