@@ -29,6 +29,7 @@ try {
     // discordの起動
     DiscordBOT.start(process.env.DISCORD_TOKEN)
 } catch (error) {
+    console.log("DiscordBOTのエラー")
     console.log(error)
 }
 
@@ -36,5 +37,6 @@ try {
     // revoltの起動
     RevoltBOT.start(process.env.REVOLT_TOKEN)
 } catch (error) {
+    console.log("RevoltBOTのエラー")
     console.log(error)
 }
