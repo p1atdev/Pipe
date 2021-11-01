@@ -279,12 +279,13 @@ export class DB {
 
             // TODO: 初回生成の場合、他のSNSのための場所が生成されないため、それを治す
             supportedSNS.forEach((sns) => {
-                roomRef.set(
-                    {
+                roomRef.get(sns).catch((err) => {
+                    roomRef.set({
                         [sns]: [],
-                    },
-                    { merge: true }
-                )
+                    })
+                })
+                console.log(err)
+                console.log(`${sns} についての場所がなかったので生成した`)
             })
 
             return true
