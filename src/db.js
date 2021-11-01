@@ -304,28 +304,34 @@ export class DB {
      * @returns { Address[] }
      */
     static getAddressesOfRoom = (room) => {
-        return supportedSNS
-            .map((sns) => {
-                try {
-                    return room
-                        .get(sns)
-                        .map((port) => {
-                            console.log(room)
-                            return new Address({
-                                type: sns,
-                                id: port.id,
-                                webhook: port.webhook || "",
-                                parentId: port.parentId || "",
+        try {
+            return supportedSNS
+                .map((sns) => {
+                    try {
+                        return room
+                            .get(sns)
+                            .map((port) => {
+                                console.log(room)
+                                return new Address({
+                                    type: sns,
+                                    id: port.id,
+                                    webhook: port.webhook || "",
+                                    parentId: port.parentId || "",
+                                })
                             })
-                        })
-                        .flat()
-                } catch (err) {
-                    //スキップ
-                    console.log(err)
-                    // TODO: 存在しないのはおかしいので直す
-                }
-            })
-            .flat()
+                            .flat()
+                    } catch (err) {
+                        //スキップ
+                        console.log(err)
+                        // TODO: 存在しないのはおかしいので直す
+                    }
+                })
+                .flat()
+        } catch (err) {
+            console.log(err)
+            // 多分ルームが存在しないので
+            return []
+        }
     }
 
     /**

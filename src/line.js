@@ -127,6 +127,12 @@ const eventHandler = async (event) => {
                                     client.getBotInfo(),
                                 ])
 
+                                if (ports.length == 0) {
+                                    replyText("ルームに接続できるポートがありません")
+                                    return
+                                }
+
+                                // 接続する
                                 const portText = ports
                                     .map((port) => {
                                         return port.parentName == ""
