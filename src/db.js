@@ -276,11 +276,14 @@ export class DB {
                     { merge: true }
                 ),
             ])
+
+            // TODO: 初回生成の場合、他のSNSのための場所が生成されないため、それを治す
+
+            return true
         } catch (err) {
             console.log(`ルーム入室エラー: ${err}`)
+            return false
         }
-
-        // TODO: 初回生成の場合、他のSNSのための場所が生成されないため、それを治す
     }
 
     /**
