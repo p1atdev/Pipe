@@ -29,7 +29,7 @@ const eventHandler = async (event) => {
      */
     const rid = event.source.roomId || null
 
-    const addressId = rid ?? gid ?? uid
+    const addressId = rid || gid || uid
 
     const prof =
         rid == null ? await client.getGroupMemberProfile(gid, uid) : await client.getRoomMemberProfile(rid, uid)
