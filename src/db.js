@@ -278,6 +278,14 @@ export class DB {
             ])
 
             // TODO: 初回生成の場合、他のSNSのための場所が生成されないため、それを治す
+            supportedSNS.forEach((sns) => {
+                roomRef.set(
+                    {
+                        [sns]: [],
+                    },
+                    { merge: true }
+                )
+            })
 
             return true
         } catch (err) {
