@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "pipebot-f3a48"
+    "develop": "pipebot-f3a48",
+    "stable": "pipebot-stable"
   }
 }

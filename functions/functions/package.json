@@ -6,7 +6,8 @@
     "shell": "firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "logs": "firebase functions:log",
+    "env": "firebase functions:config:set line.secret_key='3ebfe125721c4b0e6da0c16c238d9bea' line.access_token='te9lIlUkqoJuLlehsd07uOTIka87+J8ZGqnrkvE8A0ROtYgwHBQON4JBZKWuLFcuZ+o/2SckNBj2EG0PXcSTYzD2hg3FRM3UbUvyUeSk5Sw+c8ZqsXC05HyP3VgBnDoPPxiuYF97EkmRR7mtpR/0IQdB04t89/1O/w1cDnyilFU='"
   },
   "engines": {
     "node": "14"

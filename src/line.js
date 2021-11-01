@@ -35,6 +35,7 @@ const eventHandler = async (event) => {
     const userName = prof.displayName
     const iconURL = prof.pictureUrl
     const author = new Author(userName, iconURL)
+    const isGroup = gid ? true : false
 
     function replyText(text, sender = {}) {
         client.replyMessage(event.replyToken, {
@@ -190,6 +191,10 @@ const eventHandler = async (event) => {
                 }
 
                 case "sticker": {
+                    if (!isGroup) {
+                        break
+                    }
+
                     const stickerUrl =
                         "https://stickershop.line-scdn.net/stickershop/v1/sticker/" +
                         event.message.stickerId +
@@ -204,6 +209,10 @@ const eventHandler = async (event) => {
                 }
 
                 case "image": {
+                    if (!isGroup) {
+                        break
+                    }
+
                     console.log("LINEのメッセージから画像を生成するよ")
                     const imageURL = await LINEBOT.generateMediaURL(event.message.id, "image0.png")
 
@@ -215,6 +224,10 @@ const eventHandler = async (event) => {
                 }
 
                 case "video": {
+                    if (!isGroup) {
+                        break
+                    }
+
                     const videoURL = await LINEBOT.generateMediaURL(event.message.id, "video0.mp4")
 
                     const videoMessage = new MediaMessage(videoURL, videoURL, "video", author)
