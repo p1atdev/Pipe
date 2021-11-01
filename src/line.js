@@ -22,12 +22,12 @@ const eventHandler = async (event) => {
      * グループid
      * @type { string }
      */
-    const gid = event.source.groupId ?? null
+    const gid = event.source.groupId || null
     /**
      * ルームid
      * @type { string }
      */
-    const rid = event.source.roomId ?? null
+    const rid = event.source.roomId || null
 
     const addressId = rid ?? gid ?? uid
 
@@ -298,12 +298,12 @@ export default class LINEBOT {
         res.status(200).end()
         console.log("LINEにリクエストがきた")
         const events = req.body.events
-        const promises = []
+        let promises = []
         for (let i = 0, l = events.length; i < l; i++) {
             const event = events[i]
             promises.push(eventHandler(event))
         }
-        Promise.all(promises).then(console.log("pass"))
+        Promise.all(promises).then(console.log("LINEのリクエストを全て捌いた"))
     }
 
     /**
