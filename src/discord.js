@@ -90,16 +90,34 @@ client.on("messageCreate", async (message) => {
     } else {
         // 対象のアドレスに一斉送信
         const author = new Author(message.member.nickname || message.author.username, message.author.avatarURL())
+        // 送信先
+        const messageAddress = await Address.getDiscordAddressOf(message)
 
         // テキストメッセージがあれば
         if (message.content != "") {
             // 発言者の情報と共有するメッセージを作成する
             try {
-                // 対象のアドレスに一斉送信
-                const pipeMessage = new TextMessage(message.content, author)
-                const messageAddress = await Address.getDiscordAddressOf(message)
-                const pipe = new Pipe(pipeMessage, messageAddress)
-                await pipe.sendTextMessage()
+                // もし絵文字であれば
+                if (message.content.match(/<a?:.+:.+>/)) {
+                    // 絵文字を送信
+
+                    // 絵文字の拡張子
+                    const emojiExt = message.content.split(/:|<|>/)[1] == "a" ? "gif" : "png"
+                    // 絵文字を取得
+                    const emojiURL = `https://cdn.discordapp.com/emojis/${
+                        message.content.split(/:|<|>/)[3]
+                    }.${emojiExt}`
+
+                    const pipeMessage = new MediaMessage(emojiURL, emojiURL, "image", author)
+                    const pipe = new Pipe(pipeMessage, messageAddress)
+                    await pipe.sendMediaMessage()
+                } else {
+                    // テキストを
+                    // 対象のアドレスに一斉送信
+                    const pipeMessage = new TextMessage(message.content, author)
+                    const pipe = new Pipe(pipeMessage, messageAddress)
+                    await pipe.sendTextMessage()
+                }
             } catch (err) {
                 console.log(`転送されません: ${err}`)
                 return
@@ -108,11 +126,10 @@ client.on("messageCreate", async (message) => {
 
         // 画像とかがあれば
         message.attachments.forEach(async (attachment) => {
-            const fileUrl = attachment.url
+            const fileURL = attachment.url
             const contentType = attachment.contentType
 
-            const pipeMessage = new MediaMessage(fileUrl, fileUrl, contentType, author)
-            const messageAddress = await Address.getDiscordAddressOf(message)
+            const pipeMessage = new MediaMessage(fileURL, fileURL, contentType, author)
 
             const pipe = new Pipe(pipeMessage, messageAddress)
             await pipe.sendMediaMessage()

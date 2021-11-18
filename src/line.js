@@ -169,7 +169,7 @@ const eventHandler = async (event) => {
                                 return
                             }
 
-                            case "/leave": {
+                            case "/disconnect": {
                                 if (rid != null) {
                                     replyText(
                                         "トークルームではこの機能をご利用いただけません。グループを作成してお使いください。"
