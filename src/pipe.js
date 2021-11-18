@@ -46,24 +46,28 @@ export class MediaMessage {
     /**
      *
      * @param { string } url
-     * @param { string } previewURL
+     * @param { string } previewURL プレビュー用のサイズ小さいやつ？
      * @param { string } type
      * @param { Author } author
      */
     constructor(url, previewURL, type, author) {
         this.url = url
         this.previewURL = previewURL
-        this.type = type
+        this.type = type.split("/")[0].toLowerCase()
         this.author = author
     }
 
     generateLINEMessage = () => {
-        switch (this.type.toLowerCase()) {
+        switch (this.type) {
             case "image": {
                 return {
                     type: this.type,
-                    originalContentUrl: this.media,
-                    previewImageUrl: this.previewImageUrl,
+                    originalContentUrl: this.url,
+                    previewImageUrl: this.previewURL,
+                    sender: {
+                        name: this.author.userName,
+                        iconUrl: this.author.iconURL,
+                    },
                 }
             }
             case "video": {

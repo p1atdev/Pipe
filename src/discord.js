@@ -88,15 +88,14 @@ client.on("messageCreate", async (message) => {
             }
         }
     } else {
+        // 対象のアドレスに一斉送信
+        const author = new Author(message.member.nickname || message.author.username, message.author.avatarURL())
+
         // テキストメッセージがあれば
         if (message.content != "") {
             // 発言者の情報と共有するメッセージを作成する
             try {
                 // 対象のアドレスに一斉送信
-                const author = new Author(
-                    message.member.nickname || message.author.username,
-                    message.author.avatarURL()
-                )
                 const pipeMessage = new TextMessage(message.content, author)
                 const messageAddress = await Address.getDiscordAddressOf(message)
                 const pipe = new Pipe(pipeMessage, messageAddress)
@@ -107,63 +106,17 @@ client.on("messageCreate", async (message) => {
             }
         }
 
-        // 画像とかがあるか確認
-        // msg.attachments.flatMap(async (fileMessage) => {
-        //     console.log(fileMessage.attachment)
-        //     const fileName = fileMessage.name
-        //     const stream = fs.createReadStream(fileMessage.attachment)
-        //     const fileType = (await FileType.fromStream(stream)).mime.toString().split("/")[0]
+        // 画像とかがあれば
+        message.attachments.forEach(async (attachment) => {
+            const fileUrl = attachment.url
+            const contentType = attachment.contentType
 
-        //     console.log(fileType)
+            const pipeMessage = new MediaMessage(fileUrl, fileUrl, contentType, author)
+            const messageAddress = await Address.getDiscordAddressOf(message)
 
-        //     const supportedType = ["image", "video", "audio"]
-
-        //     // 返信に使うオブジェクトを生成
-        //     const replyMessage = () => {
-        //         switch (fileName) {
-        //             case supportedType[0]: {
-        //                 // image
-        //                 return {
-        //                     type: "image",
-        //                     originalContentUrl: fileMessage.attachment,
-        //                     previewImageUrl: "",
-        //                 }
-        //             }
-
-        //             case supportedType[1]: {
-        //                 // video
-        //                 return {
-        //                     type: "video",
-        //                     originalContentUrl: fileMessage.attachment,
-        //                     previewImageUrl: "",
-        //                 }
-        //             }
-
-        //             // case supportedType[2]: {
-        //             //     // audio
-        //             //     return {
-        //             //         type: "audio",
-        //             //         originalContentUrl: fileMessage.attachment,
-        //             //         duration: 0
-        //             //     }
-        //             // }
-
-        //             default: {
-        //                 return {
-        //                     type: "text",
-        //                     text: `ファイル: ${fileMessage.attachment}`,
-        //                 }
-        //             }
-        //         }
-        //     }
-
-        //     try {
-        //         client.pushMessage(gid, replyMessage())
-        //     } catch {
-        //         msg.channel.send(`送信できませんでした\n月の送信制限に達した可能性があります`)
-        //         return
-        //     }
-        // })
+            const pipe = new Pipe(pipeMessage, messageAddress)
+            await pipe.sendMediaMessage()
+        })
     }
 })
 

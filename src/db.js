@@ -222,8 +222,8 @@ export class DB {
             return null
         }
 
-        const room = rooms.docs[0]
-        const id = room.id
+        const room = rooms.docs
+        const id = room.map((room) => room.id).join(", ")
 
         // ルームがあるのでidを返す
         return id
