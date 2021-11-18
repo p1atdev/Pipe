@@ -26,6 +26,7 @@ express()
             LINEBOT.posted(req, res)
         } catch {
             console.log("LINEBOT.posted error")
+            res.status(500).end()
         }
     })
     // .get("/twitter/", (req, res) => {})
