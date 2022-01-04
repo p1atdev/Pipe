@@ -14,7 +14,7 @@
     "env": "heroku config:push -a pipebot-develop .env --overwrite",
     "env:stable": "heroku config:push -a pipebot-stable -f .stable.env --overwrite",
     "deploy": "git push -u origin master",
-    "deploy:stable": "git push -u stable master"
+    "deploy:stable": "git push stable master"
   },
   "dependencies": {
     "@discordjs/builders": "^0.6.0",
