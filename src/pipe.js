@@ -28,7 +28,8 @@ export class TextMessage {
             type: "text",
             text: this.text,
             sender: {
-                name: this.author.userName,
+                // もし名前の長さが20文字を超えるなら、後半を削る
+                name: this.author.userName > 20 ? this.author.userName.substring(0, 19) + "…" : this.author.userName,
                 iconUrl: this.author.iconURL,
             },
         }
